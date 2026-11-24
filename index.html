@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Land a Python Backend Developer Job — Countdown Lock Screen</title>
+<!--
+  HANDSHAKE x GEMINI CHALLENGE — "Your Deadline, Your Design"
+  HOW TO USE (2 minutes):
+  1. Open this file in a browser (phone or computer).
+  2. Type your deadline name + date in the setup box, pick a style, hit "Build my lock screen".
+  3. Screenshot the result (phone: 1080x2400-ish) and use it as your cover image / lock screen.
+  4. Submit on Handshake before Mon 23 Nov 2026, 11:59 PM PT
+     = Tue 24 Nov 2026, 1:29 PM IST. You need: title, cover image, description, project link/URL.
+  TO EDIT MILESTONES: change the labels in the MILESTONES list in the script below —
+  dates are auto-computed working backwards from your deadline (25% / 50% / 75% of the way).
+  DESIGN NOTES (from top Handshake entries): top fifth stays clear for the phone
+  clock, fixed deadline date (not just a day counter) so it stays true every morning,
+  milestones sit above the fingerprint sensor / bottom shortcuts.
+-->
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0b0b12; display: flex; justify-content: center; min-height: 100vh;
+         font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  /* Phone canvas: 1080x2400 ratio (20:9), scales to screen */
+  .screen { width: min(100vw, 56.25vh); aspect-ratio: 9 / 20; position: relative; overflow: hidden;
+            color: #fff; display: flex; flex-direction: column; }
+  .screen.style-midnight { background: linear-gradient(180deg, #0f2027 0%, #203a43 45%, #2c5364 100%); }
+  .screen.style-sunset   { background: linear-gradient(180deg, #2b1055 0%, #7597de 60%, #f7b733 130%); }
+  .screen.style-forest   { background: linear-gradient(180deg, #0b3d2e 0%, #14532d 55%, #1f7a4d 100%); }
+  .screen.style-rose     { background: linear-gradient(180deg, #3b0a2a 0%, #7b2d5e 55%, #c94f7c 100%); }
+  /* Top fifth: deliberately empty for the phone clock + date */
+  .clock-zone { height: 20%; }
+  .content { flex: 1; display: flex; flex-direction: column; align-items: center;
+             padding: 0 8%; text-align: center; }
+  .eyebrow { font-size: clamp(11px, 2.6vw, 15px); letter-spacing: .35em; text-transform: uppercase;
+             opacity: .75; margin-top: 2%; }
+  .days { font-size: clamp(90px, 24vw, 150px); font-weight: 800; line-height: 1; margin-top: 4%; }
+  .days-label { font-size: clamp(18px, 4.5vw, 26px); font-weight: 600; letter-spacing: .12em;
+                text-transform: uppercase; margin-top: 1%; }
+  .deadline-name { font-size: clamp(20px, 5vw, 30px); font-weight: 700; margin-top: 7%; }
+  .deadline-date { font-size: clamp(15px, 3.8vw, 21px); opacity: .9; margin-top: 1.5%; }
+  .rule { width: 22%; height: 2px; background: rgba(255,255,255,.6); margin: 8% 0 6%; }
+  .milestones { width: 100%; display: flex; flex-direction: column; gap: 14px; text-align: left; }
+  .ms { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,.12);
+        border: 1px solid rgba(255,255,255,.18); border-radius: 14px; padding: 12px 16px; }
+  .ms .dot { width: 12px; height: 12px; border-radius: 50%; background: #fff; flex-shrink: 0; }
+  .ms.done .dot { background: #7CFC9A; }
+  .ms .ms-text { font-size: clamp(14px, 3.6vw, 19px); font-weight: 600; }
+  .ms .ms-date { margin-left: auto; font-size: clamp(13px, 3.4vw, 18px); opacity: .85; white-space: nowrap; }
+  .footer { height: 12%; display: flex; align-items: flex-end; justify-content: center;
+            padding-bottom: 9%; font-size: clamp(12px, 3vw, 16px); letter-spacing: .25em;
+            text-transform: uppercase; opacity: .55; }
+  /* Setup overlay — hidden once built, so screenshots stay clean */
+  .setup { position: absolute; inset: 0; background: rgba(8,8,16,.96); z-index: 10;
+           display: flex; flex-direction: column; justify-content: center; padding: 10%;
+           gap: 14px; text-align: left; }
+  .setup.hidden { display: none; }
+  .setup h1 { font-size: 26px; line-height: 1.25; }
+  .setup p { font-size: 15px; opacity: .8; line-height: 1.5; }
+  .setup label { font-size: 13px; letter-spacing: .15em; text-transform: uppercase; opacity: .7; }
+  .setup input, .setup select { width: 100%; padding: 13px 14px; border-radius: 10px; border: 1px solid #444;
+           background: #171724; color: #fff; font-size: 16px; }
+  .setup button { padding: 15px; border: none; border-radius: 12px; background: #fff; color: #111;
+           font-size: 17px; font-weight: 700; cursor: pointer; margin-top: 6px; }
+  .setup .hint { font-size: 13px; opacity: .6; }
+</style>
+</head>
+<body>
+<div class="screen style-midnight" id="screen">
+  <div class="clock-zone"></div>
+  <div class="content">
+    <div class="eyebrow">Countdown to</div>
+    <div class="days" id="days">–</div>
+    <div class="days-label" id="daysLabel">days to go</div>
+    <div class="deadline-name" id="dName">Your deadline</div>
+    <div class="deadline-date" id="dDate"></div>
+    <div class="rule"></div>
+    <div class="milestones" id="milestones"></div>
+  </div>
+  <div class="footer">Your Deadline &middot; Your Design</div>
+
+  <div class="setup" id="setup">
+    <h1>Build your countdown lock screen</h1>
+    <p>For the Handshake &times; Gemini challenge. Fill this in, hit build, then screenshot the clean screen underneath.</p>
+    <label for="inName">My biggest deadline is…</label>
+    <input id="inName" type="text" placeholder="e.g. Final project submission" maxlength="48">
+    <label for="inDate">Deadline date</label>
+    <input id="inDate" type="date">
+    <label for="inStyle">Style</label>
+    <select id="inStyle">
+      <option value="style-midnight">Midnight — dark blue</option>
+      <option value="style-sunset">Sunset — purple / gold</option>
+      <option value="style-forest">Forest — deep green</option>
+      <option value="style-rose">Rose — deep pink</option>
+    </select>
+    <button id="buildBtn" type="button">Build my lock screen</button>
+    <p class="hint">Tip: open with ?date=2026-12-15&amp;name=Finals to skip the form. Milestones are auto-set at 25% / 50% / 75% of the way there — edit their labels in the file if you want your own.</p>
+  </div>
+</div>
+
+<script>
+  // EDIT THESE LABELS if you want your own milestones (dates auto-compute from your deadline).
+  var MILESTONE_LABELS = ["Apply to 20 roles", "Interviews in full swing", "Final rounds + offer"];
+  var MILESTONE_FRACTIONS = [0.25, 0.5, 0.75];
+
+  function fmt(d) {
+    return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+  }
+  function build(name, dateStr, style) {
+    var deadline = new Date(dateStr + "T23:59:00");
+    var today = new Date(); today.setHours(0, 0, 0, 0);
+    var totalDays = Math.max(1, Math.round((deadline - today) / 86400000));
+    var daysLeft = Math.max(0, Math.round((deadline - today) / 86400000));
+    document.getElementById("days").textContent = daysLeft;
+    document.getElementById("daysLabel").textContent = daysLeft === 1 ? "day to go" : "days to go";
+    document.getElementById("dName").textContent = name || "Your deadline";
+    document.getElementById("dDate").textContent = fmt(deadline);
+    var screen = document.getElementById("screen");
+    screen.className = "screen " + style;
+    var box = document.getElementById("milestones");
+    box.innerHTML = "";
+    MILESTONE_LABELS.forEach(function (label, i) {
+      var msDate = new Date(today.getTime() + totalDays * MILESTONE_FRACTIONS[i] * 86400000);
+      var done = msDate < today;
+      var row = document.createElement("div");
+      row.className = "ms" + (done ? " done" : "");
+      row.innerHTML = '<span class="dot"></span><span class="ms-text"></span><span class="ms-date"></span>';
+      row.querySelector(".ms-text").textContent = label;
+      row.querySelector(".ms-date").textContent = fmt(msDate);
+      box.appendChild(row);
+    });
+    document.getElementById("setup").classList.add("hidden");
+  }
+  document.getElementById("buildBtn").addEventListener("click", function () {
+    var name = document.getElementById("inName").value.trim();
+    var date = document.getElementById("inDate").value;
+    var style = document.getElementById("inStyle").value;
+    if (!date) { alert("Pick your deadline date first."); return; }
+    build(name, date, style);
+  });
+  // Chosen for Midhun (he said decide everything):
+  // Deadline: Land a Python Backend Developer job — 31 Dec 2026, style: Midnight.
+  // Deep link still works: ?date=YYYY-MM-DD&name=...&style=style-sunset
+  var q = new URLSearchParams(location.search);
+  if (q.get("date")) { build(q.get("name") || "", q.get("date"), q.get("style") || "style-midnight"); }
+  else { build("Land a Python Backend Developer job", "2026-12-31", "style-midnight"); }
+</script>
+</body>
+</html>
